@@ -3,6 +3,7 @@ var canvas = rgl.canvas
 	canvas.width = window.innerWidth
 	canvas.height = window.innerHeight
 var gl = rgl.gl
+	gl.enable(gl.DEPTH_TEST)
 	rgl.adjustViewportToCanvas()
 
 var pMatrix = mat4.createPerspective(canvas.width/canvas.height,Math.PI/2,1,100)
@@ -25,16 +26,43 @@ function main(){
 function begin(){
 	gl.bindTexture(gl.TEXTURE_2D,crateTexture)
 	gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,crateImage)
-	gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR)
-	gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR)
-	gl.generateMipmap(gl.TEXTURE_2D)
+	gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST)
+	gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST) //gl.LINEAR
+	//gl.generateMipmap(gl.TEXTURE_2D)
 	gl.bindTexture(gl.TEXTURE_2D,null)
 
-
-	var cubeGeo  = rgl.createCubeGeometry(1,1,1)
-	var cubeMaterial = new rgl.Material({type:"textured",texture:crateTexture})
+	//console.log(rgl)
+	var cubeGeo = new rgl.CubeGeometry()
+	var cubeMat = new rgl.CubeMaterial({type:"texture",texture:crateTexture})
+	var cubeMesh = new rgl.Mesh(cubeGeo,cubeMat)
 	console.log(cubeGeo)
-	console.log(cubeMaterial)
+	console.log(cubeMat)
+	console.log(rgl.ap)
+	//render(cubeMesh)
+	setInterval(function(){
+		render(cubeMesh)
+	},17)
 }
 
 
+function render(mesh){
+	var theta = new Date().getTime()/4000
+	var geometry = mesh.geometry
+	var material = mesh.material
+
+	geometry.vertexNormalBuffer.bind()
+	rgl.vertexAttribPointer("vertexPosition")
+	
+	material.texCoordBuffer.bind()
+	rgl.vertexAttribPointer("texCoord")
+	gl.bindTexture(gl.TEXTURE_2D,material.texture)
+	gl.activeTexture(gl.TEXTURE0)
+	gl.uniform1i(rgl.ap.uTexture,0)
+
+	var rotation = new Float32Array([Math.sin(theta), 0,0 , Math.cos(theta)])//hax rotation for now, gotta think about this is gonna work
+	gl.uniformMatrix4fv(rgl.ap.pMatrix,false,pMatrix)
+	gl.uniform4fv(rgl.ap.rotationQuaternion,rotation)
+	gl.uniform3fv(rgl.ap.scale,mesh.scale)
+	gl.uniform3fv(rgl.ap.position, vec3.subed(mesh.position,[0,.75,1.5]) )
+	gl.drawArrays(gl.TRIANGLES,0,36)//assume its a cube
+}

@@ -1,32 +1,29 @@
-rgl.Material = function(data){
-	//support for bump mapping stuff can come later....hmmm.
-	//not sure how that will work with some stuff havin
-	//and soem stuff nawt. huuuhhh
-	this.wireframe = data.wireframe || false
-	this.shading = data.shading || 'gorroud'
-	this.normals = data.normals || 'face'
-	this.type = data.type || "solid"
-	if(this.type=="textured"){
-		this.texture = data.texture
-		if(!data.texCoords){
-			console.log('tex coords are undefined...using filler for a cube!')
-			var texCoordArray = []
-				for(var i=0;i<6;i++){
-					texCoordArray.push(
-						1,1,
-						0,1,
-						0,0,
-						0,0,
-						1,0,
-						1,1
-					)
-				}
-				//remove once spheres are coming plz
-			this.texCoordBuffer = new rgl.Buffer(gl.ARRAY_BUFFER,new Uint8Array(texCoordArray),gl.STATIC_DRAW,gl.UNSIGNED_BYTE,2,texCoordArray.length/2)
-		}else{
-			console.log('didnt make the texCoords')
-			//this.texCoords = data.texCoords
-		}
-	}
-	//add support for colormap stuffs
+rgl.Material = function(){
+	
 }
+
+rgl.CubeMaterial = function(data){
+	this.type = data.type
+	this.wireframe = data.wireframe || false
+	this.normals = data.normals || "surface"
+	this.shading = data.shading || "Gouraud"
+
+	if(data.type=="texture"){
+		this.texture = data.texture
+			if(!data.texCoords){
+				console.log(gl.ARRAY_BUFFER,rgl.genericCubeTextureCoordinates,gl.STATIC_DRAW,gl.UNSIGNED_BYTE,2,rgl.genericCubeTextureCoordinates.length/2)
+				this.texCoordBuffer = new rgl.Buffer(gl.ARRAY_BUFFER,rgl.genericCubeTextureCoordinates,gl.STATIC_DRAW,gl.UNSIGNED_BYTE,2,rgl.genericCubeTextureCoordinates.length/2)
+				console.log(this.texCoordBuffer)
+			}else{
+				console.log('didnt write the code to generate a texCoordBuffer ._. OOOPPPSS')
+			}
+	}
+}
+
+//also I guess UV stuff is what you ah supposed to do, but I dun get...so there is that. 
+
+rgl.genericCubeTextureCoordinates = new Uint8Array([
+	1,1,0,1,0,0,0,0,1,0,1,1,1,1,0,1,0,0,0,0,1,0,1,1,1,1,0,1,0,0,0,0,1,0,1,1,1,1,0,1,0,0,0,0,1,0,1,1,1,1,0,1,0,0,0,0,1,0,1,1,1,1,0,1,0,0,0,0,1,0,1,1
+]) // lawl such line console.log(rgl.genericCubeTextureCoordinates.length/2)
+
+console.log(rgl.genericCubeTextureCoordinates)

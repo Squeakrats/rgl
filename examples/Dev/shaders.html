@@ -8,21 +8,29 @@ return vec + 2.0 * cross( cross( vec, quat.xyz ) + quat.w * vec, quat.xyz );
 //read da awsome link and lern how it works later. For now just know it
 
 
-attribute vec3 vPosition;
+
 uniform mat4 pMatrix;
-uniform vec4 rQuat;
-uniform vec3 oPosition;
+
+attribute vec3 vertexPosition;
+attribute vec2 texCoord;
+varying mediump vec2 vCoord;
+
+uniform vec4 rotationQuaternion;
+uniform vec3 scale;
+uniform vec3 position;
 	void main(void){
-		vec3 position = oPosition + rotate_vector(rQuat,vPosition);
+		vec3 position = position +  scale * rotate_vector(rotationQuaternion,vertexPosition);
 		gl_Position = pMatrix  * vec4(position,1.0);
+		vCoord = texCoord;
 	}
 </script>
 
 
 <script id="fragmentShader">
-	precision mediump float;
+	varying mediump vec2 vCoord;
+	uniform sampler2D uTexture;
 	void main(void){
-		gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+		gl_FragColor = texture2D(uTexture,vCoord);
 	}
 </script>
 
