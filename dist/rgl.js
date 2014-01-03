@@ -64,6 +64,8 @@ rgl.Geometry.prototype.setup = function(){
 	this.webglVertexNormals = []
 	this.webglFaceNormals = []
 	this.webglWireframeIndices = []
+
+	this.data = {}
 }
 
 rgl.Geometry.prototype.buildBuffers = function(vertices,vertexNormals,faceNormals){
@@ -85,13 +87,7 @@ rgl.TriangleSoup = function(){
 rgl.TriangleSoup.prototype = new rgl.Geometry()
 
 rgl.TriangleSoup.prototype.addFace = function(indices){
-	//DEV
-	if(indices.length>3){
-		console.log('this is a triangle Soup, dont add more than 3 vertices to a face...although it shouldnt matter...it does')
-	}
 	this.faceIndices.push(indices)
-	//possibly add in some data in case we want to compute vertexNormals
-	//however if it's a mesh, we know them, and if it is a rgl shape...we know them...so it's low priority atm 
 }
 
 rgl.TriangleSoup.prototype.addVertexNormal = function(){
@@ -268,27 +264,41 @@ rgl.loadShaderFile = function(dir,async,callback){
 	return out
 
 }
+
 rgl.Material = function(){
 	
 }
 
 rgl.CubeMaterial = function(data){
+	//all of this seems like the gernic material, shouldnt be cube specific ._.
 	this.type = data.type
 	this.wireframe = data.wireframe || false
-	this.normals = data.normals || "surface"
-	this.shading = data.shading || "Gouraud"
-
+	this.normal = data.normal || 'face'
 	if(data.type=="texture"){
 		this.texture = data.texture
 			if(!data.texCoords){
-				console.log(gl.ARRAY_BUFFER,rgl.genericCubeTextureCoordinates,gl.STATIC_DRAW,gl.UNSIGNED_BYTE,2,rgl.genericCubeTextureCoordinates.length/2)
 				this.texCoordBuffer = new rgl.Buffer(gl.ARRAY_BUFFER,rgl.genericCubeTextureCoordinates,gl.STATIC_DRAW,gl.UNSIGNED_BYTE,2,rgl.genericCubeTextureCoordinates.length/2)
-				console.log(this.texCoordBuffer)
 			}else{
 				console.log('didnt write the code to generate a texCoordBuffer ._. OOOPPPSS')
 			}
 	}
+
+	if(data.type == "texture" && (this.normal =="face" || "vertex")){
+		var NORMAL = (this.normal == 'face')? "faceNormalBuffer":"vertexNormalBuffer"
+		this.shaderMap = {
+			program:rgl.programList.texturedNormalBuffer,
+			attributes:{
+				normal:NORMAL,
+				texCoord:this.texCoordBuffer
+			},
+			uniforms:{
+				texture:{type:'1i',value:this.texture,textureSlot:0}
+			}
+		}
+	}
+
 }
+
 
 //also I guess UV stuff is what you ah supposed to do, but I dun get...so there is that. 
 
@@ -296,14 +306,241 @@ rgl.genericCubeTextureCoordinates = new Uint8Array([
 	1,1,0,1,0,0,0,0,1,0,1,1,1,1,0,1,0,0,0,0,1,0,1,1,1,1,0,1,0,0,0,0,1,0,1,1,1,1,0,1,0,0,0,0,1,0,1,1,1,1,0,1,0,0,0,0,1,0,1,1,1,1,0,1,0,0,0,0,1,0,1,1
 ]) // lawl such line console.log(rgl.genericCubeTextureCoordinates.length/2)
 
-console.log(rgl.genericCubeTextureCoordinates)
 rgl.Mesh = function(geometry, material){
 	this.position = new Float32Array(3)
-	this.rotation = new Float32Array(3)
+	this.rotation = new Float32Array([0,0,0,1])
 	this.scale    = new Float32Array([1,1,1])
-
 	this.geometry = geometry
 	this.material = material
+	this.meshes = []
+
+	var shaderMap = this.shaderMap = {program:material.shaderMap.program,attributes:{},uniforms:{}}
+	materialAttributes = material.shaderMap.attributes 
+	materialUniforms = material.shaderMap.uniforms
+
+	for(var prop in materialAttributes){
+		var value =  materialAttributes[prop] 
+		shaderMap.attributes[prop] = (typeof value == "string")? geometry[value]: value
+	}
+	for(var prop in materialUniforms){
+		var value =  materialUniforms[prop] 
+		shaderMap.uniforms[prop] = (typeof value == "string")? geometry[value]: value
+	}
+
+}
+
+rgl.Mesh.prototype.loadGL = function(){
+	var shaderMap = this.shaderMap,
+		attributes = shaderMap.attributes,
+		uniforms = shaderMap.uniforms
+	for(var attribute in attributes){
+		var attrib = attributes[attribute]
+			attrib.bind()
+			rgl.vertexAttribPointer(attribute)
+	}
+	for(var uniform in uniforms){
+		var uni = uniforms[uniform]
+		rgl['uniform' + uni.type](rgl.ap[uniform],uni)
+		//console.log(uni)
+	}
+//	console.log('still dont load uniforms ._.')
+}
+
+
+
+//setup using material.shaderMap 
+
+rgl.BasicRenderer = function(){
+
+	var mv = this.ModelView = new rgl.ModelView()
+
+
+	this.render = function(scene, camera){
+		var meshes = scene.meshes
+		mv.push()
+
+			if(!camera.usingEuler){
+				mv.rotate(quat4.conjugated(camera.quaternion)) // verify that we are in quatmode first, use both for maximum magic
+			}else{
+			//	mv.rotate(quat4.fromEuler(camera.euler ))
+			}
+			
+			mv.translate(vec3.scaled(camera.position,-1))
+			for(var i=0, j = meshes.length; i < j; i++){
+				console.log(meshes[i].position)
+				this.renderMesh(meshes[i],camera)
+			}
+
+		mv.pop()
+	}
+
+	this.renderMesh = function(mesh, camera){
+		var geometry = mesh.geometry, material = mesh.meterial 
+		mv.push()
+			mv.setMatrices()
+			rgl.useProgram(mesh.shaderMap.program)
+			geometry.vertexBuffer.bind()
+			rgl.vertexAttribPointer("position")
+			gl.uniformMatrix4fv(rgl.ap.pMatrix,false,camera.pMatrix)
+			gl.uniformMatrix4fv(rgl.ap.mvMatrix,false,mv.mvMatrix)
+			mesh.loadGL()
+			gl.drawArrays(gl.TRIANGLES,0,geometry.vertexBuffer.numItems)
+		mv.pop()
+	}
+
+	
+}
+
+
+
+rgl.ModelView = function(){
+	this.translation = new Float32Array(3),
+	this.quaternion = new Float32Array([0,0,0,1])
+	this.scale    = new Float32Array([1,1,1])	
+	this.mvMatrix = mat4.createIdentity() //only update when I need to pass it. 
+	this.stack    = []
+}
+rgl.ModelView.prototype.push = function(){
+		this.stack.push({
+			translation:new Float32Array(this.translation),
+			quaternion:new Float32Array(this.quaternion),
+			scale:new Float32Array(this.scale)
+		})
+}
+rgl.ModelView.prototype.pop = function(){
+	var pick = this.stack.pop()
+	this.translation = pick.translation
+	this.quaternion = pick.quaternion
+	this.scale = pick.quaternion
+}
+rgl.ModelView.prototype.rotate = function(quat){
+	var quaternion = this.quaternion
+	quat4.mult(quaternion,quat,quaternion) // I swapped these 
+
+}
+rgl.ModelView.prototype.translate = function(vector){
+	var displacement = quat4.rotatedVec3Quat(vector,this.quaternion)
+	vec3.add(this.translation,displacement,this.translation)
+}
+
+rgl.ModelView.prototype.setMatrices = function(){
+	//so many things to unroll. but this is uber beta build 9k. js needs inline functions -.-
+	var mv = this.mvMatrix
+//	mat3.console(mat3.fromQuaternion(this.quaternion))
+		mat4.writeRotation(mat3.fromQuaternion(this.quaternion) , mv)
+		mv[12] = this.translation[0]
+		mv[13] = this.translation[1]
+		mv[14] = this.translation[2] //12,13,14
+		//mat4.console(mv)
+		//mat4.console(mv)
+		//mat4.scale(mv,scale,mv)
+}
+
+
+
+
+
+/*
+rgl.DeferredRenderer = function(){
+	//convert shit to mvMatrix, pMatrix, mvPMatrix, rMatrix 
+	this.mv = new rgl.ModelView()
+}
+
+rgl.DeferredRenderer.prototype.render = function(scene,camera){
+	//set up the right framebuffer stuff etc. 
+	//render geom
+	var mv = this.mv
+	var meshes = scene.meshes
+	mv.push()
+
+	//quat4.mult(mv.rotation,quat4.conjugated(camera.rotation),mv.rotation)
+	//vec3.sub(mv.translation,camera.translation,mv.translation) //asumption that scene has 0 rotation ._. or uea/move then rot
+	//mv.translate(vec3.scaled(camera.translation,-1))
+	//mv.rotateFromQuat(quat4.conjugated(camera.rotation))
+	var now = new Date().getTime()
+
+	//mv.rotateFromQuat(quat4.conjugated(camera.rotation))
+	//mv.translate(vec4.scaled(camera.translation,-1))
+
+	//console.log(mv.translation)
+	
+	//console.log(mv.rotation)
+	for(var i=0, j = meshes.length; i < j; i++){
+		//this.renderMesh(meshes[i],camera)
+	}
+	mv.pop()
+}
+rgl.DeferredRenderer.prototype.renderMesh = function(mesh,camera){
+	var mv  = this.mv
+	var geometry = mesh.geometry
+	var material = mesh.material
+	mv.push()
+	//go relative 
+
+	rgl.useProgram(mesh.shaderMap.program)
+	geometry.vertexBuffer.bind()
+	rgl.vertexAttribPointer("vertextranslation")
+	//gl.uniformMatrix4fv(rgl.ap.pMatrix,false,camera.pMatrix)
+	//gl.uniform3fv(rgl.ap.meshtranslation,this.mv.translation) // hax
+	//gl.uniform4fv(rgl.ap.rotation,this.mv.rotation)
+	//gl.uniform3fv(rgl.ap.scale,this.mv.scale)
+
+	mesh.loadGL()
+
+	//assume its a soup for now AND assume its a mothe
+	gl.drawArrays(gl.TRIANGLES,0,geometry.vertexBuffer.numItems)
+	//lots of if-statements. PROOBB not how I want to do it in da future
+	//this['setUpFor_' + material.type](mesh)
+
+	//also render subMeshesEventually I guess .-.
+	this.mv.pop()
+
+
+}
+
+
+
+//temporarily here
+rgl.ModelView = function(){
+	this.translation = new Float32Array(3),
+	this.rotation = new Float32Array([0,0,0,1])
+	this.scale    = new Float32Array([1,1,1])
+	this.mvMatrix = mat4.createIdentity() //only update when I need to pass it. 
+	this.stack    = []
+}
+
+rgl.ModelView.prototype.push = function(){
+		this.stack.push({
+			translation:new Float32Array(this.translation),
+			rotation:new Float32Array(this.rotation),
+			scale:new Float32Array(this.scale)
+		})
+}
+rgl.ModelView.prototype.pop = function(){
+	var pick = this.stack.pop()
+	this.translation = pick.translation
+	this.rotation = pick.rotation
+	this.scale = pick.scale
+}
+
+rgl.ModelView.prototype.rotateFromQuat = function(quat){
+	var rotation = this.rotation
+	quat4.mult(rotation,quat,rotation) // I swapped these 
+}
+rgl.ModelView.prototype.translate = function(vector){
+	var displacement = quat4.rotatedVec3Quat(vector,this.rotation)
+	vec3.add(this.translation,displacement,this.translation)
+}
+*/
+rgl.PerspectiveCamera = function(aspect, fov, near, far){
+	this.pMatrix = mat4.createPerspective(aspect,fov,near,far)
+	this.position = new Float32Array(3)
+	this.euler = new Float32Array(3)
+	this.quaternion =  new Float32Array([0,0,0,1])
+	this.usingEuler = false
+}
+rgl.Scene = function(){
+	this.pointLights = [] //wait, should objects be aloud to have point lights on them? O_o that would be effin weird.
 	this.meshes = []
 }
 rgl.shaderStartRegex   = new RegExp("function \\(\\)\\{\\/\\*","")
@@ -315,6 +552,26 @@ rgl.uniformRegex       = new RegExp("uniform .* .*;","g")
 rgl.arrayRegex         = new RegExp("\\[.*\\]","g")
 
 rgl.ap = {attributes:[],uniforms:[]}
+
+rgl.Shader = function(type, srcText){
+    if(type == gl.VERTEX_SHADER){
+        srcText="\
+            uniform mat4 pMatrix;\n\
+            uniform mat4 mvMatrix;\n\
+            uniform mat4 pMvMatrix;\n\
+            attribute vec3 position;\n\
+            " + srcText
+    }
+    this.srcText = srcText
+    this.shader = gl.createShader(type)
+        gl.shaderSource(this.shader, srcText)
+        gl.compileShader(this.shader)
+
+    if(!gl.getShaderParameter(this.shader,gl.COMPILE_STATUS)){
+        console.log(gl.getShaderInfoLog(this.shader),(function(){return (type==gl.VERTEX_SHADER)? 'vertex':'fragment'})())
+    }
+
+}
 
 rgl.Program = function(vSrcText,fSrcText){
 	this.vertexShader = new rgl.Shader(gl.VERTEX_SHADER,vSrcText)
@@ -362,16 +619,36 @@ rgl.useProgram = function(program){
         gl.enableVertexAttribArray(program[program.attributes[i]]) 
     } 
 }
-rgl.Shader = function(type, srcText){
-	this.srcText = srcText
-	this.shader = gl.createShader(type)
-		gl.shaderSource(this.shader, srcText)
-		gl.compileShader(this.shader)
 
-	if(!gl.getShaderParameter(this.shader,gl.COMPILE_STATUS)){
-		console.log(gl.getShaderInfoLog(this.shader))
-	}
-
+rgl.uniform1i = function(uniformLocation,data){
+    gl.activeTexture(gl.TEXTURE0 + data.textureSlot)
+    gl.bindTexture(gl.TEXTURE_2D,data.value)
+    gl.uniform1i(uniformLocation,data.textureSlot)
 }
+
+
+rgl.programList = {}
+rgl.programList.texturedNormalBuffer = new rgl.Program("\
+    attribute vec3 normal;\n\
+    attribute vec2 texCoord;\n\
+    varying vec2 vCoord;\n\
+    void main(void){\n\
+        gl_Position = pMatrix * mvMatrix * vec4(position,1.0);\n\
+        vCoord = texCoord;\n\
+        vec3 save = normal;\n\
+        mat4 copyAgain = pMvMatrix;\n\
+    }",
+    "\
+    precision mediump float;\
+    uniform sampler2D texture;\
+    varying vec2 vCoord;\
+    void main(void){\
+        gl_FragColor = texture2D(texture,vCoord);\
+    }\
+    ")
+
+
+//rgl.programList.texturedNormalBuffer = new rgl.Prog
+
 return rgl
 })()

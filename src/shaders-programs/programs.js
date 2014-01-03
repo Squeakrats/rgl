@@ -8,6 +8,26 @@ rgl.arrayRegex         = new RegExp("\\[.*\\]","g")
 
 rgl.ap = {attributes:[],uniforms:[]}
 
+rgl.Shader = function(type, srcText){
+    if(type == gl.VERTEX_SHADER){
+        srcText="\
+            uniform mat4 pMatrix;\n\
+            uniform mat4 mvMatrix;\n\
+            uniform mat4 pMvMatrix;\n\
+            attribute vec3 position;\n\
+            " + srcText
+    }
+    this.srcText = srcText
+    this.shader = gl.createShader(type)
+        gl.shaderSource(this.shader, srcText)
+        gl.compileShader(this.shader)
+
+    if(!gl.getShaderParameter(this.shader,gl.COMPILE_STATUS)){
+        console.log(gl.getShaderInfoLog(this.shader),(function(){return (type==gl.VERTEX_SHADER)? 'vertex':'fragment'})())
+    }
+
+}
+
 rgl.Program = function(vSrcText,fSrcText){
 	this.vertexShader = new rgl.Shader(gl.VERTEX_SHADER,vSrcText)
 	this.fragmentShader = new rgl.Shader(gl.FRAGMENT_SHADER,fSrcText)
@@ -54,3 +74,33 @@ rgl.useProgram = function(program){
         gl.enableVertexAttribArray(program[program.attributes[i]]) 
     } 
 }
+
+rgl.uniform1i = function(uniformLocation,data){
+    gl.activeTexture(gl.TEXTURE0 + data.textureSlot)
+    gl.bindTexture(gl.TEXTURE_2D,data.value)
+    gl.uniform1i(uniformLocation,data.textureSlot)
+}
+
+
+rgl.programList = {}
+rgl.programList.texturedNormalBuffer = new rgl.Program("\
+    attribute vec3 normal;\n\
+    attribute vec2 texCoord;\n\
+    varying vec2 vCoord;\n\
+    void main(void){\n\
+        gl_Position = pMatrix * mvMatrix * vec4(position,1.0);\n\
+        vCoord = texCoord;\n\
+        vec3 save = normal;\n\
+        mat4 copyAgain = pMvMatrix;\n\
+    }",
+    "\
+    precision mediump float;\
+    uniform sampler2D texture;\
+    varying vec2 vCoord;\
+    void main(void){\
+        gl_FragColor = texture2D(texture,vCoord);\
+    }\
+    ")
+
+
+//rgl.programList.texturedNormalBuffer = new rgl.Prog

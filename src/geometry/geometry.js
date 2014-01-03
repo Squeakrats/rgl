@@ -15,6 +15,8 @@ rgl.Geometry.prototype.setup = function(){
 	this.webglVertexNormals = []
 	this.webglFaceNormals = []
 	this.webglWireframeIndices = []
+
+	this.data = {}
 }
 
 rgl.Geometry.prototype.buildBuffers = function(vertices,vertexNormals,faceNormals){
@@ -36,13 +38,7 @@ rgl.TriangleSoup = function(){
 rgl.TriangleSoup.prototype = new rgl.Geometry()
 
 rgl.TriangleSoup.prototype.addFace = function(indices){
-	//DEV
-	if(indices.length>3){
-		console.log('this is a triangle Soup, dont add more than 3 vertices to a face...although it shouldnt matter...it does')
-	}
 	this.faceIndices.push(indices)
-	//possibly add in some data in case we want to compute vertexNormals
-	//however if it's a mesh, we know them, and if it is a rgl shape...we know them...so it's low priority atm 
 }
 
 rgl.TriangleSoup.prototype.addVertexNormal = function(){
