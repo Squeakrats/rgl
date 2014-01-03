@@ -8,15 +8,26 @@ Object.defineProperties(quat,{
 	'fromZ' : vec4.fromZ,
 	'fromXY' : vec4.fromXY,
 	'fromXYZ' : vec4.fromXYZ,
+	'fromAxisAngle' : {
+		value : function (){
+			console.log('do me!')
+		}
+	},
+	'fromArrayAngle' : {
+		value : function (){
+			console.log(' do me!')
+		}
+	},
+
 	'add' : vec4.add,
-	'sub' : vec4.sub
+	'sub' : vec4.sub,
 	'mult' : {
 		value: function (_quat1, _quat2){
 			console.log('I didnt do this yet!')
 		}
 	},
 	'conjugate' : {
-		value: function (quat){
+		value: function (_quat){
 			console.log('I didnt do this yet!')
 		}
 	}

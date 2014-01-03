@@ -85,5 +85,3 @@ function main(){
 	//this is the fake
 }
 
-
-console.log(vec4.add)

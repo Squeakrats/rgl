@@ -4,6 +4,7 @@
 var vec2 = function(){
 	this.storage = new Float32Array(2)
 }
+//switch froms to return for example new vec2.fromX()
 
 Object.defineProperties(vec2,{
 	'fromX' : {
@@ -183,6 +184,25 @@ Object.defineProperties(vec3,{
 			return out 
 		}
 	},
+	'scale' : {
+		value : function (_vec, _scale){
+			var out = new vec3(), outStorage = out.storage, storage = _vec.storage
+				outStorage = storage[0] * _scale
+				outStorage = storage[1] * _scale
+				outStorage = storage[1] * _scale
+			return out
+		}
+	},
+	'normalize' : {
+		value : function (_vec){
+			var storage = _vec.storage, x = storage[0], y = storage[1], z = storage[2], len = x * x + y * y + z * z, recip = 1/len
+			var out = new vec3(), outStorage = out.storage
+				outStorage[0] = storage[0] * recip
+				outStorage[1] = storage[1] * recip
+				outStorage[2] = storage[2] * recip
+			return out
+		}
+	},
 	'dot' : {
 		value : function (_vec1, _vec2){
 			var storage1 = _vec1.storage,  x1 = storage1[0], y1 = storage1[1], z1 = storage1[2]
@@ -243,6 +263,24 @@ Object.defineProperties(vec3.prototype,{
 			//this.storage[2] = _value
 		}
 	},
+	'xyz' : {
+		get : function (){
+			var storage = this.storage
+			var out = new vec3(), outStorage = out.storage
+				out[0] = storage[0]
+				out[1] = storage[1]
+				out[2] = storage[2]
+			return out
+		},
+		set : function (_value){
+			var storage = this.storage, valueStorage = _value.storage
+				storage[0] = valueStorage[0]
+				storage[1] = valueStorage[1]
+				storage[2] = valueStorage[2]
+				//consider returns on sets? im not sure how that is supposed tochain, but I guess stuff like array[counter++] is supposed to, so mebe
+			//this.storage[2] = _value
+		}
+	},
 	//do other zy, zx, zy, zzz, xxx, etc. lots of possibles xy is prob the most common one so I'll do that one 
 	'length' : {
 		get : function (){
@@ -269,6 +307,25 @@ Object.defineProperties(vec3.prototype,{
 			return out 
 		}
 	},
+	'scale': {
+		value : function (_scale){
+			var out = new vec3(), outStorage = out.storage, storage = this.storage
+				outStorage = storage[0] * _scale
+				outStorage = storage[1] * _scale
+				outStorage = storage[1] * _scale
+			return out
+		}
+	},
+	'normalize' : {
+		value : function (){
+			var storage = this.storage, x = storage[0], y = storage[1], z = storage[2], len = x * x + y * y + z * z, recip = 1/len
+			var out = new vec3(), outStorage = out.storage
+				outStorage[0] = storage[0] * recip
+				outStorage[1] = storage[1] * recip
+				outStorage[2] = storage[2] * recip
+			return out
+		}
+	},
 	'addSelf' : {
 		value : function (_vec){
 			var storage = this.storage
@@ -284,6 +341,24 @@ Object.defineProperties(vec3.prototype,{
 			storage[0] -= _vec[0]
 			storage[1] -= _vec[1]
 			storage[2] -= _vec[2]
+			return this
+		}
+	},
+	'scaleSelf': {
+		value : function (_scale){
+			var storage = this.storage
+				storage[0] *= _scale
+				storage[1] *= _scale
+				storage[2] *= _scale
+			return this
+		}
+	},
+	'normalizeSelf' : {
+		value : function (){
+			var storage = this.storage, x = storage[0], y = storage[1], z = storage[2], len = x * x + y * y + z * z, recip = 1/len
+				storage[0] *= recip
+				storage[1] *= recip
+				storage[2] *= recip
 			return this
 		}
 	},
@@ -617,98 +692,123 @@ Object.defineProperties(vec4.prototype,{
 		}
 	}
 
-	
 })
 
+var mat3 = function(){
+	this.storage = new Float32Array(9)
+}
 
-
-
-
-
-
-
-
-
+Object.defineProperties(mat3,{
+	'fromArray' : {
+		value : function (_array){
+			var out = new mat3, storage = mat3.storage
+				out[0] = _array[0]
+				out[1] = _array[1]
+				out[2] = _array[2]
+				out[3] = _array[3]
+				out[4] = _array[4]
+				out[5] = _array[5]
+				out[6] = _array[6]
+				out[7] = _array[7]
+				out[8] = _array[8]
+			return out 
+		}
+	},
+	'identity' : {
+		value : function (_mat){
+			var storage = _mat.storage
+				storage[0] = 1
+				storage[1] = 0 
+				storage[2] = 0 
+				storage[3] = 0
+				storage[4] = 1 
+				storage[5] = 0 
+				storage[6] = 0 
+				storage[7] = 0 
+				storage[8] = 1 
+			return _mat 
+		}
+	},
+	'mult' : {
+		value : function (_mat1,_mat2){
+			console.log('do me!')
+			return out
+		}
+	},
+})
+//add rCol + colR stuff for setting rows, as well as colums, and uniformScaling + non uni scaling, and scalar mult
+Object.defineProperties(mat3.prototype,{
+	'a00' : {
+		get : function (){ return this.storage[0] },
+		set : function(_value){ this.storage[0] = _value 
+		}
+	},
+	'a10' : { 
+		get : function (){ return this.storage[1] },
+		set : function(_value){ this.storage[1] = _value
+		}
+	},
+	'a20' : {
+		get : function (){return this.storage[2] },
+		set : function(_value){this.storage[2] = _value
+		}
+	},
+	'a01' : {
+		get : function (){return this.storage[3] },
+		set : function(_value){ this.storage[3] = _value
+		}
+	},
+	'a11' : { 
+		get : function (){ return this.storage[4] },
+		set : function(_value){ this.storage[4] = _value
+		}
+	},
+	'a21' : {
+		get : function (){ return this.storage[5] },
+		set : function(_value){ this.storage[5] = _value
+		}
+	},
+	'a02' : {
+		get : function (){ return this.storage[6] },
+		set : function(_value){ this.storage[6] = _value
+		}
+	},
+	'a12' : {
+		get : function (){ return this.storage[7] },
+		set : function(_value){ this.storage[7] = _value
+		}
+	},
+	'a22' : {
+		get : function (){ return this.storage[8] },
+		set : function(_value){ this.storage[8] = _value }
+	},
+	'identity' : {
+		value : function (){
+			var storage = this.storage
+				storage[0] = 1
+				storage[1] = 0 
+				storage[2] = 0 
+				storage[3] = 0
+				storage[4] = 1 
+				storage[5] = 0 
+				storage[6] = 0 
+				storage[7] = 0 
+				storage[8] = 1 
+			return this 
+		}
+	},
+	'mult' : {
+		value : function (){
+			console.log('do me!')
+		}
+	},
+	'multSelf' : {
+		value : function (){
+			console.log('do me!')
+		}
+	}
+})
 /*
-
-var vec4 = function( x, y, z, w){
-	return new Float32Array([x, y, z, w])
-}
-
-vec4.xy = function(a){
-	return new Float32Array([a[0],a[1]])
-}
-
-vec4.xyz = function(a){
-	return new Float32Array([a[0],a[1],a[2]])
-}
-
-vec4.added = function(a, b){
-	return new Float32Array([
-		a[0] + b[0], 
-		a[1] + b[1],
-		a[2] + b[2],
-		a[3] + b[3]
-	])
-}
-
-vec4.subed = function(a, b){
-	return new Float32Array([
-		a[0] - b[0], 
-		a[1] - b[1],
-		a[2] - b[2],
-		a[3] - b[3]
-	])
-}
-
-vec4.scaled = function (a, scale){
-	return new Float32Array([
-		a[0] * scale,
-		a[1] * scale,
-		a[2] * scale,
-		a[3] * scale
-	])
-}
-
-vec4.normalized = function(a){
-	console.log("do this!")
-}
-
-vec4.add = function(a, b, out){
-	out[0] = a[0] + b[0]
-	out[1] = a[1] + b[1]
-	out[2] = a[2] + b[2]
-	out[3] = a[3] + b[3]
-}
-
-vec4.sub = function(a, b, out){
-	out[0] = a[0] - b[0]
-	out[1] = a[1] - b[1]
-	out[2] = a[2] - b[2]
-	out[3] = a[3] - b[3]
-}
-
-vec4.scale = function(a, scale, out){
-	out[0] = a[0] * scale
-	out[1] = a[1] * scale
-	out[2] = a[2] * scale
-	out[3] = a[3] * scale
-}
-
-vec4.normalize = function(a,out){
-	console.log('do this !')
-}
-
-vec4.length = function(a){
-	var x = a[0], y = a[1], z = a[2], w = a[3]
-	return Math.sqrt(x * x + y * y + z * z + w * w)
-}
-
-vec4.getLength = function(a){
-	var x = a[0], y = a[1], z = a[2], w = a[3]
-	return Math.sqrt(x * x + y * y + z * z + w * w)
-}
-*/
 var mat3 = function(){
 	//just use a float32Array with 16 elements, would be nice to pass as cols
 	//but might just confused me if I am using 2 systems 
@@ -772,7 +872,7 @@ var mat3 = function(){
 		a[8] = 1
 	}
 
-
+*/
 var mat4 = function(){
 	//just use a float32Array with 16 elements, would be nice to pass as cols
 	//but might just confused me if I am using 2 systems 
@@ -876,15 +976,26 @@ Object.defineProperties(quat,{
 	'fromZ' : vec4.fromZ,
 	'fromXY' : vec4.fromXY,
 	'fromXYZ' : vec4.fromXYZ,
+	'fromAxisAngle' : {
+		value : function (){
+			console.log('do me!')
+		}
+	},
+	'fromArrayAngle' : {
+		value : function (){
+			console.log(' do me!')
+		}
+	},
+
 	'add' : vec4.add,
-	'sub' : vec4.sub
+	'sub' : vec4.sub,
 	'mult' : {
 		value: function (_quat1, _quat2){
 			console.log('I didnt do this yet!')
 		}
 	},
 	'conjugate' : {
-		value: function (quat){
+		value: function (_quat){
 			console.log('I didnt do this yet!')
 		}
 	}

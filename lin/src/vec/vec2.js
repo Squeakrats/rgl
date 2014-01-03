@@ -3,6 +3,7 @@
 var vec2 = function(){
 	this.storage = new Float32Array(2)
 }
+//switch froms to return for example new vec2.fromX()
 
 Object.defineProperties(vec2,{
 	'fromX' : {

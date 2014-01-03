@@ -60,6 +60,25 @@ Object.defineProperties(vec3,{
 			return out 
 		}
 	},
+	'scale' : {
+		value : function (_vec, _scale){
+			var out = new vec3(), outStorage = out.storage, storage = _vec.storage
+				outStorage = storage[0] * _scale
+				outStorage = storage[1] * _scale
+				outStorage = storage[1] * _scale
+			return out
+		}
+	},
+	'normalize' : {
+		value : function (_vec){
+			var storage = _vec.storage, x = storage[0], y = storage[1], z = storage[2], len = x * x + y * y + z * z, recip = 1/len
+			var out = new vec3(), outStorage = out.storage
+				outStorage[0] = storage[0] * recip
+				outStorage[1] = storage[1] * recip
+				outStorage[2] = storage[2] * recip
+			return out
+		}
+	},
 	'dot' : {
 		value : function (_vec1, _vec2){
 			var storage1 = _vec1.storage,  x1 = storage1[0], y1 = storage1[1], z1 = storage1[2]
@@ -120,6 +139,24 @@ Object.defineProperties(vec3.prototype,{
 			//this.storage[2] = _value
 		}
 	},
+	'xyz' : {
+		get : function (){
+			var storage = this.storage
+			var out = new vec3(), outStorage = out.storage
+				out[0] = storage[0]
+				out[1] = storage[1]
+				out[2] = storage[2]
+			return out
+		},
+		set : function (_value){
+			var storage = this.storage, valueStorage = _value.storage
+				storage[0] = valueStorage[0]
+				storage[1] = valueStorage[1]
+				storage[2] = valueStorage[2]
+				//consider returns on sets? im not sure how that is supposed tochain, but I guess stuff like array[counter++] is supposed to, so mebe
+			//this.storage[2] = _value
+		}
+	},
 	//do other zy, zx, zy, zzz, xxx, etc. lots of possibles xy is prob the most common one so I'll do that one 
 	'length' : {
 		get : function (){
@@ -146,6 +183,25 @@ Object.defineProperties(vec3.prototype,{
 			return out 
 		}
 	},
+	'scale': {
+		value : function (_scale){
+			var out = new vec3(), outStorage = out.storage, storage = this.storage
+				outStorage = storage[0] * _scale
+				outStorage = storage[1] * _scale
+				outStorage = storage[1] * _scale
+			return out
+		}
+	},
+	'normalize' : {
+		value : function (){
+			var storage = this.storage, x = storage[0], y = storage[1], z = storage[2], len = x * x + y * y + z * z, recip = 1/len
+			var out = new vec3(), outStorage = out.storage
+				outStorage[0] = storage[0] * recip
+				outStorage[1] = storage[1] * recip
+				outStorage[2] = storage[2] * recip
+			return out
+		}
+	},
 	'addSelf' : {
 		value : function (_vec){
 			var storage = this.storage
@@ -161,6 +217,24 @@ Object.defineProperties(vec3.prototype,{
 			storage[0] -= _vec[0]
 			storage[1] -= _vec[1]
 			storage[2] -= _vec[2]
+			return this
+		}
+	},
+	'scaleSelf': {
+		value : function (_scale){
+			var storage = this.storage
+				storage[0] *= _scale
+				storage[1] *= _scale
+				storage[2] *= _scale
+			return this
+		}
+	},
+	'normalizeSelf' : {
+		value : function (){
+			var storage = this.storage, x = storage[0], y = storage[1], z = storage[2], len = x * x + y * y + z * z, recip = 1/len
+				storage[0] *= recip
+				storage[1] *= recip
+				storage[2] *= recip
 			return this
 		}
 	},
