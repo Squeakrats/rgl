@@ -2,6 +2,7 @@
 //dont add fromArray untill I know if I want to copy the contents of src or use that array ._. 
 var vec2 = function(){
 	this.storage = new Float32Array(2)
+	return this
 }
 //switch froms to return for example new vec2.fromX()
 

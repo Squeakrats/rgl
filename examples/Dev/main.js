@@ -80,8 +80,3 @@ function registerkeys(){
 
 
 */
-
-function main(){
-	//this is the fake
-}
-

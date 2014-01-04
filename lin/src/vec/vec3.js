@@ -1,6 +1,7 @@
 
 var vec3 = function(){
 	this.storage = new Float32Array(3)
+	return this
 }
 
 Object.defineProperties(vec3,{
